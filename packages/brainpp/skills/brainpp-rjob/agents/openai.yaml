@@ -1,0 +1,3 @@
+interface:
+  display_name: "Brain++ GPU 实验"
+  short_description: "在本项目通过 rjob 运行 GPU 实验、修改代码并分析结果"

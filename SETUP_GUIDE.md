@@ -140,7 +140,40 @@ Depending on your model combination, you may need to register additional MCP ser
 
 ## Step 4: Configure GPU Server
 
-If your experiments run on a remote GPU server, you need two things: SSH key-based auth + server info in CLAUDE.md.
+Choose the configuration for your backend. For **Codex execution on Brain++ H**, use the one-command package in 4.0. For **Claude Code execution on an SSH server**, use 4.1–4.2.
+
+### 4.0 Codex + Brain++ Package
+
+Run from an existing research project; replace `~/aris_repo` with your ARIS checkout:
+
+```bash
+# Preview: no project writes and no GPU submissions
+bash ~/aris_repo/tools/install_aris_brainpp.sh . --all --dry-run
+
+# Install ARIS Codex skills and the Brain++ package
+bash ~/aris_repo/tools/install_aris_brainpp.sh . --all --quiet
+
+# Selective installation and reviewer overlay flags are also supported
+# bash ~/aris_repo/tools/install_aris_brainpp.sh . --groups ideation,experiments,review-loop --quiet
+```
+
+The wrapper delegates to `install_aris_codex.sh`. ARIS skills retain their managed symlink layout; the Brain++ skill is copied from `packages/brainpp/` into the flat `.agents/skills/brainpp-rjob/` directory, including references, UI metadata and two scripts, without historical job logs. Installation requires Python 3 and Bash, but does not require rjob or conda.
+
+An independent `ARIS-BRAINPP` block in `AGENTS.md` routes all GPU work through rjob, including idea pilots, sanity checks, training, evaluation, supplementary experiments and GPU profiling. Codex reads `AGENTS.md`; configuration only in `CLAUDE.md` does not configure this route. Remove or explicitly update conflicting GPU backend rules before installation.
+
+The bundled namespace, charged group, image, GPFS mount and eight-GPU resource shape are **specific to this project**, not universal cluster defaults. The real conda prefix, entrypoint, experiment budget and timeout must still be established for each task. Put explicit project overrides outside both managed blocks. Other teams can pass `--brainpp-package /path/to/package` with their own configured package, using the same layout as `packages/brainpp/`.
+
+```bash
+# Reconcile both parts, keeping the ARIS selection and original overlay flags
+bash ~/aris_repo/tools/install_aris_brainpp.sh . --reconcile --quiet
+
+# Uninstall both parts; only unchanged files/blocks created by the wrapper are removed
+bash ~/aris_repo/tools/install_aris_brainpp.sh . --uninstall --quiet
+```
+
+`.aris/installed-brainpp.json` tracks Brain++ separately. Local changes block update/uninstall instead of being overwritten. An identical pre-existing rjob skill can be reused and is preserved on uninstall, as are extra result files. Plain ARIS reconcile/uninstall preserves the Brain++ package. `--no-doc` is unsupported because the GPU rules are part of the package; `--list-groups` lists ARIS groups only.
+
+Installation prepares skills and configuration; it never runs a GPU smoke test or training job. Subsequent GPU work uses `rjob submit → get → verify shared artifacts → delete`, defaults to serial execution, and counts GPU-hours using the actual requested card count. Start a new Codex session in the project after installation.
 
 ### 4.1 Set Up SSH Key-Based Login
 

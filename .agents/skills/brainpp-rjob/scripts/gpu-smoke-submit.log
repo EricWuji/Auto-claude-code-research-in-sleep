@@ -1,0 +1,4 @@
+10-10 14:56:31 [INFO] auto restart is not enabled, this job will not be restarted when issues occur
+10-10 14:56:31 [INFO] rjob name with timestamp is simple, use wuyinqi-gpu-smoke-20261010-145629-91013970 as metadata name
+10-10 14:56:31 [INFO] created rjob_name: wuyinqi-gpu-smoke-20261010-145629-91013970
+

@@ -140,7 +140,42 @@ bash ~/aris_repo/tools/install_aris.sh
 
 ## 第四步：配置 GPU 服务器
 
-如果你的实验需要跑在远程 GPU 服务器上，需要两步：SSH 免密登录 + 写入服务器信息。
+根据实验后端选择配置方式。**Codex 执行 + Brain++ H 集群**使用下面的 4.0 一键安装包；**Claude Code 执行 + SSH 服务器**使用 4.1–4.2。
+
+### 4.0 Codex + Brain++ 一键安装
+
+在已经存在的研究项目目录中运行（`~/aris_repo` 替换为 ARIS 仓库的实际路径）：
+
+```bash
+# 预览：不写项目文件，不提交 GPU 任务
+bash ~/aris_repo/tools/install_aris_brainpp.sh . --all --dry-run
+
+# 安装全部 ARIS Codex skills + Brain++ 包
+bash ~/aris_repo/tools/install_aris_brainpp.sh . --all --quiet
+
+# 或选择研究与实验相关分组；reviewer overlay 参数也可以照常传入
+# bash ~/aris_repo/tools/install_aris_brainpp.sh . --groups ideation,experiments,review-loop --quiet
+```
+
+包装脚本复用 `install_aris_codex.sh`：ARIS skills 保持受管 symlink 布局；Brain++ skill 从仓库的 `packages/brainpp/` 复制为 `.agents/skills/brainpp-rjob/` 实体目录，包括说明、references、UI 元数据及两个运行脚本，不携带历史任务日志。需要 Python 3 和 Bash，无需在安装阶段配置 rjob 或 conda。
+
+安装器在项目 `AGENTS.md` 中加入独立的 `ARIS-BRAINPP` 管理区块，覆盖 idea pilot、sanity、训练、GPU 评估、补实验和 GPU profiling。Codex 使用 `AGENTS.md`；不要仅把这份配置写进 Claude 使用的 `CLAUDE.md`。首次安装前如有其他 GPU 后端配置，应明确移除或更新相冲突的规则。
+
+此包沿用当前项目的 namespace、charged-group、image、GPFS 和 8 卡资源规格，**不是所有用户通用的集群配置**。实际 conda 路径、实验入口、预算与时间上限仍需针对研究任务确定。项目覆盖项写在 `ARIS-CODEX` 和 `ARIS-BRAINPP` 管理区块外，明确注明覆盖的字段；其他团队可以用 `--brainpp-package /path/to/package` 指向按其权限配置的包，目录结构与 `packages/brainpp/` 相同。
+
+更新和卸载：
+
+```bash
+# 更新 ARIS 与 Brain++；保留当前 ARIS skill 选择（保留首次使用的 overlay 参数）
+bash ~/aris_repo/tools/install_aris_brainpp.sh . --reconcile --quiet
+
+# 卸载两部分；仅删除未修改且由安装器创建的文件/管理区块
+bash ~/aris_repo/tools/install_aris_brainpp.sh . --uninstall --quiet
+```
+
+Brain++ 文件和管理区块由 `.aris/installed-brainpp.json` 单独记录；本地修改会阻止更新或卸载并报告冲突，不会自动覆盖。相同的已有 rjob skill 可以复用，卸载时保留；额外加入的结果文件也会保留。单独调用原 `install_aris_codex.sh` 更新或卸载 ARIS 时，Brain++ 配置和 skill 保留。包装脚本不支持 `--no-doc`，因为 GPU 约定是安装包的一部分。`--list-groups` 只列出 ARIS 分组。
+
+安装包只准备 skills 和配置，不启动 smoke 或训练，不创建 GPU 任务。后续 GPU 工作负载通过 `rjob submit → get → 核对共享产物 → delete` 执行，默认串行；GPU-hours 按实际申请卡数计算。安装后在项目目录中开始新的 Codex 会话。
 
 ### 4.1 配置 SSH 免密登录
 
